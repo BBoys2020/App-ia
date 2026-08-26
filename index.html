@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniMedia AI Pro</title>
+    <style>
+        :root {
+            --bg-dark: #090a0f;
+            --bg-panel: #161b22;
+            --bg-input: #0d1117;
+            --neon-cyan: #00f2fe;
+            --neon-purple: #9b51e0;
+            --text-main: #8b949e;
+            --text-white: #f0f6fc;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 15px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        h1 { 
+            color: var(--text-white); 
+            font-size: 1.6rem; 
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card {
+            background-color: var(--bg-panel);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #30363d;
+        }
+        label { font-size: 0.9rem; color: var(--text-white); display: block; margin-bottom: 6px; }
+        textarea, select, input[type="file"] {
+            width: 100%;
+            background: var(--bg-input);
+            color: var(--text-white);
+            border: 1px solid #30363d;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            color: #000;
+            border: none;
+            padding: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .file-input-wrapper { display: none; }
+        .loading-bar { width: 100%; background-color: #21262d; height: 6px; border-radius: 3px; overflow: hidden; display: none; margin-top: 15px; }
+        .loading-fill { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); width: 0%; height: 100%; transition: width 0.1s linear; }
+        img, video { width: 100%; border-radius: 8px; display: none; margin-top: 15px; }
+        .text-output { background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid #30363d; display: none; margin-top: 15px; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🌌 OmniMedia AI Pro</h1>
+        <div style="font-size:0.9rem;">Saldo: <span id="userCredits" style="color:var(--neon-cyan); font-weight:bold;">100</span> HW</div>
+    </div>
+
+    <div class="card">
+        <label for="aiFunction">Selecione a Ferramenta de IA</label>
+        <select id="aiFunction" onchange="toggleFormFields()">
+            <option value="text2image">🖼️ Texto para Imagem (Criação Ultra-Realista)</option>
+            <option value="bgremoval">✂️ Remoção de Fundo Inteligente (Apenas Objetos/Pessoas)</option>
+            <option value="upscale">✨ Upscaling Pro (Aumentar Resolução e Detalhes)</option>
+            <option value="text2video">📹 Texto para Vídeo (Animação de Cenas Cinematográficas)</option>
+            <option value="voiceclone">🗣️ Clonagem de Voz e Narração (Texto para Áudio Realista)</option>
+            <option value="subtitles">📝 Legendagem Automática e Transcrição (Vídeo para Texto)</option>
+        </select>
+
+        <div id="fileWrapper" class="file-input-wrapper">
+            <label id="fileLabel" for="fileUpload">Selecione o Arquivo de Origem</label>
+            <input type="file" id="fileUpload" accept="image/*,video/*">
+        </div>
+
+        <div id="promptWrapper">
+            <label id="promptLabel" for="promptText">Instrução de IA (Prompt de Comando)</label>
+            <textarea id="promptText" rows="3" placeholder="Descreva os detalhes da sua criação..."></textarea>
+        </div>
+
+        <button onclick="executarIA()">Processar na Nuvem</button>
+    </div>
+
+    <div class="card" id="resultadoCard" style="display:none;">
+        <div id="resStatus" style="color:white; font-weight:bold;">Aguardando comando...</div>
+        <div class="loading-bar" id="loadBar"><div class="loading-fill" id="loadFill"></div></div>
+        
+        <img id="outputImage" src="">
+        <video id="outputVideo" src="" controls></video>
+        <div id="outputText" class="text-output"></div>
+    </div>
+
+    <script>
+        let credits = 100;
+
+        function toggleFormFields() {
+            const func = document.getElementById('aiFunction').value;
+            const fileWrapper = document.getElementById('fileWrapper');
+            const promptWrapper = document.getElementById('promptWrapper');
+            const fileUpload = document.getElementById('fileUpload');
+            const promptLabel = document.getElementById('promptLabel');
+
+            fileWrapper.style.display = "none";
+            promptWrapper.style.display = "block";
+            promptLabel.innerText = "Instrução de IA (Prompt de Comando)";
+
+            if (func === "text2image") {
+                document.getElementById('promptText').placeholder = "Ex: Astronauta jogando futebol em Tóquio futurista...";
+            } else if (func === "bgremoval" || func === "upscale") {
+                fileWrapper.style.display = "block";
+                promptWrapper.style.display = "none";
+                fileUpload.accept = "image/*";
+            } else if (func === "text2video") {
+                document.getElementById('promptText').placeholder = "Ex: Câmera deslizando por floresta mágica...";
+            } else if (func === "voiceclone") {
+                promptLabel.innerText = "Texto a ser narrado por Voz Inteligente";
+                document.getElementById('promptText').placeholder = "Escreva o roteiro de narração...";
+            } else if (func === "subtitles") {
+                fileWrapper.style.display = "block";
+                promptWrapper.style.display = "none";
+                fileUpload.accept = "video/*";
+            }
+        }
+
+        function executarIA() {
+            const func = document.getElementById('aiFunction').value;
+            const cardRes = document.getElementById('resultadoCard');
+            const resStatus = document.getElementById('resStatus');
+            const loadBar = document.getElementById('loadBar');
+            const loadFill = document.getElementById('loadFill');
+            
+            document.getElementById('outputImage').style.display = "none";
+            document.getElementById('outputVideo').style.display = "none";
+            document.getElementById('outputText').style.display = "none";
+
+            cardRes.style.display = 'block';
+            loadBar.style.display = 'block';
+            resStatus.innerText = 'Conectando à rede neural...';
+            
+            let progresso = 0;
+            loadFill.style.width = '0%';
+
+            const interval = setInterval(() => {
+                progresso += 5;
+                loadFill.style.width = progresso + '%';
+                
+                if (progresso >= 100) {
+                    clearInterval(interval);
+                    loadBar.style.display = 'none';
+                    resStatus.innerText = '✅ Processamento Concluído!';
+                    
+                    credits -= 5;
+                    document.getElementById('userCredits').innerText = credits;
+
+                    if (func.includes('video')) {
+                        document.getElementById('outputVideo').src = "https://mixkit.co";
+                        document.getElementById('outputVideo').style.display = "block";
+                    } else if (func.includes('voice') || func.includes('subtitle')) {
+                        document.getElementById('outputText').innerText = "Processamento concluído com sucesso!";
+                        document.getElementById('outputText').style.display = "block";
+                    } else {
+                        document.getElementById('outputImage').src = "https://unsplash.com";
+                        document.getElementById('outputImage').style.display = "block";
+                    }
+                }
+            }, 100);
+        }
+        toggleFormFields();
+    </script>
+</body>
+</html>
